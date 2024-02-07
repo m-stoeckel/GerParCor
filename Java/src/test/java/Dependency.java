@@ -23,8 +23,7 @@ public class Dependency {
         try {
             String pConfig = System.getProperty("config");
             if (Objects.isNull(pConfig)) {
-                System.out.println("Please provide a MongoDB configuration file.");
-                Assertions.fail();
+                Assertions.fail("You must provide a MongoDB configuration file.");
             }
 
             String pFilter = System.getProperty("filter", "{}");
@@ -33,8 +32,7 @@ public class Dependency {
 
             String pOutput = System.getProperty("output", "");
             if (Objects.isNull(pOutput)) {
-                System.out.println("Please provide an output path.");
-                Assertions.fail();
+                Assertions.fail("You must provide an output path.");
             }
 
             boolean pOverwrite = Boolean.parseBoolean(System.getProperty("overwrite", "false"));
