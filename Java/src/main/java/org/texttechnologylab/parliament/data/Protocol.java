@@ -2,11 +2,8 @@ package org.texttechnologylab.parliament.data;
 
 import org.apache.uima.UIMAException;
 import org.apache.uima.jcas.JCas;
-import org.json.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.sql.Date;
 
 public interface Protocol extends Comparable<Protocol> {
@@ -47,11 +44,7 @@ public interface Protocol extends Comparable<Protocol> {
     String getUIMADocumentID();
     String getName();
 
-    void getDocumentAsFile(OutputStream pOutputStream) throws UIMAException, IOException;
-
-    File getDocumentAsFile() throws UIMAException, IOException;
+    File getDocumentAsFile();
 
     JCas getDocumentAsJCas() throws UIMAException;
-
-    JSONObject toJSON();
 }

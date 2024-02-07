@@ -1,0 +1,7 @@
+remote_host = huaxal.hucompute.org
+remote_database = GerParCor
+remote_user = gerparcor_user_rw
+remote_password = 9[#fMWD|NOqi0dD~sG8/
+remote_port = 27025
+remote_collection = Protocols
+remote_collection_grid = Data

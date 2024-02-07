@@ -1,10 +1,8 @@
 package org.texttechnologylab.parliament.data;
 
-import org.bson.conversions.Bson;
 import org.texttechnologylab.parliament.database.MongoDBConnectionHandler;
 
 import java.sql.Date;
-import java.util.List;
 import java.util.Set;
 
 public interface ParliamentFactory {
@@ -25,10 +23,5 @@ public interface ParliamentFactory {
     Set<String> listDevisions();
 
 
-    Set<String> listParliaments();
-
-
     void getTimeRanges();
-
-    Set<Protocol> doQuery(Bson query);
 }

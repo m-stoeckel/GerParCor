@@ -32,9 +32,7 @@ public class ParliamentFactory_Impl implements ParliamentFactory {
 
     @Override
     public Protocol getProtocol(String sID) {
-        Document pDocument = pDBHandler.getObject(sID);
-        Protocol rProtocol = new Protocol_Impl(this, pDocument);
-        return rProtocol;
+        return null;
     }
 
     @Override
@@ -126,23 +124,6 @@ public class ParliamentFactory_Impl implements ParliamentFactory {
     }
 
     @Override
-    public Set<String> listParliaments() {
-        Set<String> rSet = new HashSet<>(0);
-
-        List<Bson> query = new ArrayList<>();
-
-        query.add(Aggregates.group("$meta.parliament", new BsonField("count", BsonDocument.parse("{ $sum: 1 }"))));
-
-        MongoCursor<Document> pResult = this.getDatabaseHandler().getCollection().aggregate(query).cursor();
-
-        pResult.forEachRemaining(r->{
-            rSet.add(r.getString("_id"));
-        });
-
-        return rSet;
-    }
-
-    @Override
     public void getTimeRanges(){
         List<Bson> query = new ArrayList<>();
 
@@ -159,22 +140,6 @@ public class ParliamentFactory_Impl implements ParliamentFactory {
             System.out.println(r.get("_id") +" \t & " + sdf.format(new Timestamp(r.getLong("valueMin"))) +" \t & " + sdf.format(new Timestamp(r.getLong("valueMax"))) );
         });
 
-
-    }
-
-    @Override
-    public Set<Protocol> doQuery(Bson query){
-
-        Set<Protocol> rSet = new HashSet<>(0);
-
-        MongoCursor<Document> pResult = this.getDatabaseHandler().getCollection().find(query).cursor();
-
-        while(pResult.hasNext()){
-            Document d = pResult.next();
-            rSet.add(new Protocol_Impl(d));
-        }
-
-        return rSet;
 
     }
 }

@@ -4,24 +4,16 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
-import org.apache.tools.ant.taskdefs.TempFile;
 import org.apache.uima.UIMAException;
-import org.apache.uima.cas.SerialFormat;
 import org.apache.uima.fit.factory.JCasFactory;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.util.CasIOUtils;
 import org.bson.Document;
-import org.json.JSONObject;
 import org.texttechnologylab.parliament.data.ParliamentFactory;
 import org.texttechnologylab.parliament.data.Protocol;
-import org.texttechnologylab.utilities.helper.ArchiveUtils;
-import org.texttechnologylab.utilities.helper.TempFileHandler;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.sql.Date;
 
 public class Protocol_Impl implements Protocol {
@@ -36,10 +28,6 @@ public class Protocol_Impl implements Protocol {
 
     public Protocol_Impl(ParliamentFactory pFactory, Document pDocument){
         this.pFactory = pFactory;
-        this.pDocument = pDocument;
-    }
-
-    public Protocol_Impl(Document pDocument){
         this.pDocument = pDocument;
     }
 
@@ -165,34 +153,8 @@ public class Protocol_Impl implements Protocol {
     }
 
     @Override
-    public File getDocumentAsFile() throws UIMAException, IOException {
-        File pFile = TempFileHandler.getTempFile("aaa", ".xmi");
-            getDocumentAsFile(new FileOutputStream(pFile));
-        return pFile;
-    }
-
-    @Override
-    public void getDocumentAsFile(OutputStream pOutputStream) throws UIMAException, IOException {
-        JCas pCas = JCasFactory.createJCas();
-
-        String gridID = pDocument.getString("grid");
-        GridFSBucket gridFS = GridFSBuckets.create(pFactory.getDatabaseHandler().getDatabase(), "grid");
-
-        try (GridFSDownloadStream downloadStream = gridFS.openDownloadStream(gridID)) {
-            CasIOUtils.load(downloadStream, pCas.getCas());
-            CasIOUtils.save(pCas.getCas(), pOutputStream, SerialFormat.XMI_1_1);
-        } catch (IOException e) {
-            File tFile = TempFileHandler.getTempFile("aaa", ".xmi.gz");
-            tFile.deleteOnExit();
-            gridFS.downloadToStream(gridID, new FileOutputStream(tFile));
-            File nFile = ArchiveUtils.decompressGZ(tFile);
-            nFile.deleteOnExit();
-            Files.copy(nFile.toPath(), pOutputStream);
-
-
-
-        }
-
+    public File getDocumentAsFile() {
+        return null;
     }
 
     public void update(){
@@ -216,20 +178,6 @@ public class Protocol_Impl implements Protocol {
         }
 
         return pCas;
-    }
-
-    @Override
-    public JSONObject toJSON() {
-        JSONObject rObject = new JSONObject();
-
-            rObject.put("id", getID());
-            rObject.put("name", getName());
-            rObject.put("parliament", getParliament());
-            rObject.put("devision", getDevision());
-            rObject.put("history", isHistoric());
-            rObject.put("country", getCountry());
-
-        return rObject;
     }
 
     @Override

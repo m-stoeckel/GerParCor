@@ -1,9 +1,11 @@
 package org.texttechnologylab.parliament.duui;
 
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import com.mongodb.client.gridfs.GridFSUploadStream;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.mongodb.client.model.Filters;
 import de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData;
 import de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity;
 import de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma;
@@ -19,27 +21,25 @@ import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.CasIOUtils;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.dkpro.core.api.io.JCasFileWriter_ImplBase;
 import org.texttechnologylab.annotation.AnnotationComment;
 import org.texttechnologylab.annotation.DocumentAnnotation;
 import org.texttechnologylab.parliament.database.MongoDBConfig;
 import org.texttechnologylab.parliament.database.MongoDBConnectionHandler;
-import org.texttechnologylab.utilities.helper.ArchiveUtils;
 import org.texttechnologylab.utilities.helper.StringUtils;
-import org.texttechnologylab.utilities.helper.TempFileHandler;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.texttechnologylab.parliament.duui.MongoDBStatics.GRIDID;
+import static org.texttechnologylab.parliament.duui.MongoDBStatics.iChunkSizeBytes;
 
 public class MongoDBImporter extends JCasFileWriter_ImplBase {
+
 
     public static final String PARAM_DBConnection = "dbconnection";
     @ConfigurationParameter(name = PARAM_DBConnection, mandatory = true)
@@ -104,8 +104,6 @@ public class MongoDBImporter extends JCasFileWriter_ImplBase {
 
     public void importJCas(JCas pCas) throws IOException, NoSuchAlgorithmException {
 
-        boolean bCompress = true;
-
         String sGridId = "";
 
         try {
@@ -126,31 +124,26 @@ public class MongoDBImporter extends JCasFileWriter_ImplBase {
             pGridID.addToIndexes();
         }
 
-
-
         GridFSUploadOptions options = new GridFSUploadOptions()
-                .chunkSizeBytes(358400)
+                .chunkSizeBytes(iChunkSizeBytes)
                 .metadata(new Document("type", "uima"))
-                .metadata(new Document("compressed", bCompress))
                 .metadata(new Document(GRIDID, sGridId));
 
-        GridFSUploadStream uploadStream = gridFS.openUploadStream(sGridId, options);
-        try {
+//        Bson pQuery = Filters.eq("metadata."+GRIDID, sGridId);
+        Bson pQuery = Filters.eq("hash", sGridId);
 
-            if (bCompress) {
-                File pTempFile = TempFileHandler.getTempFile("aaa", ".xmi");
-                CasIOUtils.save(pCas.getCas(), new FileOutputStream(pTempFile), SerialFormat.XMI_1_1);
-                File compressedFile = ArchiveUtils.compressGZ(pTempFile);
-                byte[] data = Files.readAllBytes(compressedFile.toPath());
-                uploadStream.write(data);
-                uploadStream.flush();
-                pTempFile.delete();
-                compressedFile.delete();
-            } else {
-                CasIOUtils.save(pCas.getCas(), uploadStream, SerialFormat.XMI_1_1);
-            }
-            uploadStream.flush();
-            uploadStream.close();
+        MongoCursor<Document> mongoDocuments = dbConnectionHandler.getCollection().find(pQuery).cursor();
+
+        if(!mongoDocuments.hasNext()){
+
+        GridFSUploadStream uploadStream = gridFS.openUploadStream(sGridId, options);
+        String newObjectID = uploadStream.getObjectId().toString();
+
+        CasIOUtils.save(pCas.getCas(), uploadStream, SerialFormat.XMI_1_1);
+
+//        byte[] data = Files.readAllBytes(tf.toPath());
+//        uploadStream.write(data);
+        uploadStream.close();
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String finalSGridId = sGridId;
@@ -205,10 +198,21 @@ public class MongoDBImporter extends JCasFileWriter_ImplBase {
 
         });
 
+//            try (GridFSDownloadStream downloadStream = gridFS.openDownloadStream(finalSGridId)) {
+//                try {
+//                    JCas newCas = JCasFactory.createJCas();
+//
+//                    CasIOUtils.load(downloadStream, newCas.getCas());
+//
+//                    System.out.println("Before: "+JCasUtil.selectAll(pCas).size());
+//                    System.out.println("After: "+JCasUtil.selectAll(newCas).size());
+//
+//                } catch (UIMAException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//            }
 
-        }
-        catch (Exception e){
-            System.out.println(e.getMessage());
         }
     }
 
